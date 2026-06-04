@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppReviewsRouteImport } from './routes/app.reviews'
+import { Route as AppPublishingRouteImport } from './routes/app.publishing'
 import { Route as AppAiContentRouteImport } from './routes/app.ai-content'
 
 const PricingRoute = PricingRouteImport.update({
@@ -53,6 +54,11 @@ const AppReviewsRoute = AppReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPublishingRoute = AppPublishingRouteImport.update({
+  id: '/publishing',
+  path: '/publishing',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAiContentRoute = AppAiContentRouteImport.update({
   id: '/ai-content',
   path: '/ai-content',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/pricing': typeof PricingRoute
   '/app/ai-content': typeof AppAiContentRoute
+  '/app/publishing': typeof AppPublishingRoute
   '/app/reviews': typeof AppReviewsRoute
   '/app/': typeof AppIndexRoute
 }
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/pricing': typeof PricingRoute
   '/app/ai-content': typeof AppAiContentRoute
+  '/app/publishing': typeof AppPublishingRoute
   '/app/reviews': typeof AppReviewsRoute
   '/app': typeof AppIndexRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/pricing': typeof PricingRoute
   '/app/ai-content': typeof AppAiContentRoute
+  '/app/publishing': typeof AppPublishingRoute
   '/app/reviews': typeof AppReviewsRoute
   '/app/': typeof AppIndexRoute
 }
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/pricing'
     | '/app/ai-content'
+    | '/app/publishing'
     | '/app/reviews'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/pricing'
     | '/app/ai-content'
+    | '/app/publishing'
     | '/app/reviews'
     | '/app'
   id:
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/pricing'
     | '/app/ai-content'
+    | '/app/publishing'
     | '/app/reviews'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -180,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReviewsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/publishing': {
+      id: '/app/publishing'
+      path: '/publishing'
+      fullPath: '/app/publishing'
+      preLoaderRoute: typeof AppPublishingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/ai-content': {
       id: '/app/ai-content'
       path: '/ai-content'
@@ -192,12 +211,14 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAiContentRoute: typeof AppAiContentRoute
+  AppPublishingRoute: typeof AppPublishingRoute
   AppReviewsRoute: typeof AppReviewsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAiContentRoute: AppAiContentRoute,
+  AppPublishingRoute: AppPublishingRoute,
   AppReviewsRoute: AppReviewsRoute,
   AppIndexRoute: AppIndexRoute,
 }
