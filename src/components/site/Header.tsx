@@ -8,6 +8,7 @@ const nav = [
   { to: "/pricing", label: "Pricing" },
   { to: "/faq", label: "FAQ" },
   { to: "/contact", label: "Contact" },
+  { to: "/app", label: "Dashboard" },
 ];
 
 export function Header() {

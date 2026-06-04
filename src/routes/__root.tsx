@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -120,13 +121,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isApp = pathname === "/app" || pathname.startsWith("/app/");
 
   return (
     <QueryClientProvider client={queryClient}>
       <div className="relative min-h-screen">
-        <Header />
+        {!isApp && <Header />}
         <Outlet />
-        <Footer />
+        {!isApp && <Footer />}
         <Toaster />
       </div>
     </QueryClientProvider>
