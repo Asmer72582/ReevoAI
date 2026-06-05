@@ -1,14 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { env } from "../config/env.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const POSTERS_DIR = path.resolve(__dirname, "../../uploads/posters");
+import { storeImageBuffer } from "../lib/media-storage.js";
 
 const IMAGE_MODELS = [
   "gemini-2.0-flash-preview-image-generation",
@@ -52,12 +45,10 @@ Design: modern gradient background, bold readable quote text, social-media ready
       for (const part of parts) {
         const inline = (part as { inlineData?: { mimeType?: string; data?: string } }).inlineData;
         if (inline?.data && inline.mimeType?.startsWith("image/")) {
-          if (!fs.existsSync(POSTERS_DIR)) fs.mkdirSync(POSTERS_DIR, { recursive: true });
-          const ext = inline.mimeType.includes("png") ? ".png" : ".jpg";
-          const filename = `${randomUUID()}${ext}`;
-          fs.writeFileSync(path.join(POSTERS_DIR, filename), Buffer.from(inline.data, "base64"));
+          const format = inline.mimeType.includes("png") ? "png" : "jpg";
+          const buffer = Buffer.from(inline.data, "base64");
           console.log(`Gemini image OK: ${modelName}`);
-          return `${env.apiPublicUrl}/uploads/posters/${filename}`;
+          return storeImageBuffer(buffer, "posters", format);
         }
       }
     } catch (error) {

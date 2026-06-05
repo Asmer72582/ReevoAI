@@ -1,22 +1,18 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 
-import ffmpegStatic from "ffmpeg-static";
 import sharp from "sharp";
 
-import { env } from "../config/env.js";
-import { UPLOADS_DIR } from "../lib/upload.js";
+import { fetchImageBuffer } from "../lib/cloudinary.js";
+import { storeVideoFile } from "../lib/media-storage.js";
 import type { ReviewDocument } from "../models/Review.js";
 import { generateReelScript } from "./gemini.service.js";
 
 const execFileAsync = promisify(execFile);
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REELS_DIR = path.resolve(__dirname, "../../uploads/reels");
 
 const W = 1080;
 const H = 1920;
@@ -60,19 +56,12 @@ function wrapLines(text: string, maxChars: number, maxLines: number): string[] {
   return lines.slice(0, maxLines);
 }
 
-function reviewPhotoPath(url: string): string | null {
-  const marker = "/uploads/reviews/";
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return path.join(UPLOADS_DIR, url.slice(idx + marker.length));
-}
-
 async function renderSvgFrame(svg: string): Promise<Buffer> {
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-async function renderPhotoFrame(photoPath: string, overlaySvg: string): Promise<Buffer> {
-  const base = await sharp(photoPath).resize(W, H, { fit: "cover" }).toBuffer();
+async function renderPhotoFrame(photoBuffer: Buffer, overlaySvg: string): Promise<Buffer> {
+  const base = await sharp(photoBuffer).resize(W, H, { fit: "cover" }).toBuffer();
   const overlay = await sharp(Buffer.from(overlaySvg)).png().toBuffer();
   return sharp(base).composite([{ input: overlay, top: 0, left: 0 }]).png().toBuffer();
 }
@@ -206,12 +195,12 @@ async function buildSceneFrames(
   ctx: ReelContext,
 ): Promise<Buffer[]> {
   const photo = review.images?.[0];
-  const photoPath = photo ? reviewPhotoPath(photo) : null;
+  const photoBuffer = photo ? await fetchImageBuffer(photo) : null;
 
   const reviewOverlay = sceneReviewSvg(review, ctx);
   const frame1 =
-    photoPath && fs.existsSync(photoPath)
-      ? await renderPhotoFrame(photoPath, reviewOverlay)
+    photoBuffer
+      ? await renderPhotoFrame(photoBuffer, reviewOverlay)
       : await renderSvgFrame(reviewOverlay);
 
   const frame2 = await renderSvgFrame(sceneScriptSvg(script, ctx));
@@ -219,18 +208,29 @@ async function buildSceneFrames(
 
   const finalOverlay = sceneFinalSvg(script, ctx);
   const frame4 =
-    photoPath && fs.existsSync(photoPath)
-      ? await renderPhotoFrame(photoPath, finalOverlay)
+    photoBuffer
+      ? await renderPhotoFrame(photoBuffer, finalOverlay)
       : await renderSvgFrame(finalOverlay);
 
   return [frame1, frame2, frame3, frame4];
 }
 
-async function encodeMp4(frameBuffers: Buffer[], outputPath: string): Promise<void> {
-  const ffmpeg = ffmpegStatic;
-  if (!ffmpeg) throw new Error("ffmpeg binary not available");
+async function getFfmpegPath(): Promise<string | null> {
+  try {
+    const mod = await import("ffmpeg-static");
+    return mod.default ?? null;
+  } catch {
+    return null;
+  }
+}
 
-  const tempDir = path.join(REELS_DIR, `tmp-${randomUUID()}`);
+async function encodeMp4(frameBuffers: Buffer[], outputPath: string): Promise<void> {
+  const ffmpeg = await getFfmpegPath();
+  if (!ffmpeg) {
+    throw new Error("Reel video encoding is not available on this host (ffmpeg missing)");
+  }
+
+  const tempDir = path.join(os.tmpdir(), `reevoai-reel-${randomUUID()}`);
   fs.mkdirSync(tempDir, { recursive: true });
 
   try {
@@ -267,8 +267,6 @@ export async function generateReviewReel(
   review: ReviewDocument,
   ctx: ReelContext,
 ): Promise<ReelResult> {
-  if (!fs.existsSync(REELS_DIR)) fs.mkdirSync(REELS_DIR, { recursive: true });
-
   const scriptResult = await generateReelScript({
     name: review.name,
     text: review.text,
@@ -278,16 +276,19 @@ export async function generateReviewReel(
   });
 
   const script = scriptResult.script;
-
   const frames = await buildSceneFrames(review, script, ctx);
-  const filename = `${randomUUID()}.mp4`;
-  const filepath = path.join(REELS_DIR, filename);
 
-  await encodeMp4(frames, filepath);
+  const tempVideo = path.join(os.tmpdir(), `reevoai-reel-${randomUUID()}.mp4`);
+  try {
+    await encodeMp4(frames, tempVideo);
+    const videoUrl = await storeVideoFile(tempVideo);
 
-  return {
-    videoUrl: `${env.apiPublicUrl}/uploads/reels/${filename}`,
-    script,
-    aiSource: scriptResult.source,
-  };
+    return {
+      videoUrl,
+      script,
+      aiSource: scriptResult.source,
+    };
+  } finally {
+    if (fs.existsSync(tempVideo)) fs.unlinkSync(tempVideo);
+  }
 }

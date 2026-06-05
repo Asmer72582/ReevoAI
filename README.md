@@ -34,6 +34,7 @@ reviewai-automations/
 | -------- | ----------------------------------------- |
 | Frontend | TanStack Start, React, Tailwind           |
 | Backend  | Express, Mongoose, MongoDB                |
+| Media    | Cloudinary (reviews, posters, reels)         |
 | AI       | Google Gemini (fallback templates without key) |
 
 ## Prerequisites
@@ -46,9 +47,6 @@ reviewai-automations/
 brew install mongodb-community
 brew services start mongodb-community
 
-# Or Docker
-docker run -d -p 27017:27017 --name mongo mongo:7
-```
 
 ## Quick start
 
@@ -66,7 +64,7 @@ This installs frontend deps and runs `postinstall` for `backend/`.
 cp backend/.env.example backend/.env
 ```
 
-Edit `backend/.env` — at minimum set `MONGODB_URI` and optionally `GEMINI_API_KEY`.
+Edit `backend/.env` — at minimum set `MONGODB_URI`, `CLOUDINARY_*` credentials, and optionally `GEMINI_API_KEY`.
 
 ### 3. Run
 
@@ -122,7 +120,19 @@ Base URL: `http://127.0.0.1:3001/api`
 curl http://127.0.0.1:3001/api/health
 ```
 
-Health response includes `mongodb: true` when the database is connected.
+Health response includes `mongodb: true` and `cloudinary: true` when services are connected.
+
+## Cloudinary media
+
+All uploads are stored on Cloudinary:
+
+| Folder | Content |
+| ------ | ------- |
+| `reevoai/reviews` | Customer review photos |
+| `reevoai/posters` | AI posters & quote graphics |
+| `reevoai/reels` | Generated reel MP4 videos |
+
+Get credentials from [cloudinary.com/console](https://cloudinary.com/console) and add to `backend/.env`. All new uploads are stored on Cloudinary only — URLs like `https://res.cloudinary.com/...` are saved in MongoDB.
 
 ## Customer review link (with images)
 
@@ -140,3 +150,45 @@ cd backend
 npm run dev        # watch mode
 npm run typecheck
 ```
+
+## Deploy to Vercel
+
+The frontend and API deploy together on Vercel. TanStack Start handles SSR; Express API routes run on the same deployment at `/api/*`.
+
+### 1. Push to GitHub
+
+Connect your repo at [vercel.com/new](https://vercel.com/new) (this project: `Asmer72582/ReevoAI`).
+
+### 2. Environment variables
+
+Add these in the Vercel project **Settings → Environment Variables** (Production + Preview):
+
+| Variable | Description |
+| -------- | ----------- |
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `JWT_SECRET` | Long random string for auth tokens |
+| `CLIENT_ORIGIN` | Your Vercel URL, e.g. `https://reevoai.vercel.app` |
+| `PUBLIC_APP_URL` | Same as `CLIENT_ORIGIN` (used for review links) |
+| `NODE_ENV` | `production` |
+
+`VERCEL_URL` is set automatically. The API is served at `/api` on the same domain — no separate `VITE_API_URL` needed.
+
+### 3. Deploy
+
+Vercel runs `npm install` (which also installs `backend/` via `postinstall`) and `npm run build`.
+
+After deploy, verify:
+
+```bash
+curl https://your-app.vercel.app/api/health
+```
+
+### Notes
+
+- **Reel generation** requires ffmpeg and may not work on Vercel serverless (posters and review uploads work via Cloudinary).
+- Use **MongoDB Atlas** — local `mongodb://127.0.0.1` will not work on Vercel.
+- Demo login: `demo@reevoai.com` / `demo1234` (seeded on first API request).

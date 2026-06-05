@@ -22,6 +22,15 @@ export default defineConfig({
     }),
     viteReact(),
     tailwindcss(),
-    nitro(),
+    nitro({
+      preset: process.env.VERCEL ? "vercel" : undefined,
+      vercel: {
+        entryFormat: "node",
+      },
+      nodeModulesDirs: [".", "./backend"],
+      externals: {
+        external: ["ffmpeg-static"],
+      },
+    }),
   ],
 });

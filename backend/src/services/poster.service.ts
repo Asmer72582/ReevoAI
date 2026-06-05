@@ -1,19 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
 import sharp from "sharp";
 
-import { env } from "../config/env.js";
-import { UPLOADS_DIR } from "../lib/upload.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const POSTERS_DIR = path.resolve(__dirname, "../../uploads/posters");
-
-if (!fs.existsSync(POSTERS_DIR)) {
-  fs.mkdirSync(POSTERS_DIR, { recursive: true });
-}
+import { fetchImageBuffer } from "../lib/cloudinary.js";
+import { storeImageBuffer } from "../lib/media-storage.js";
 
 export type PosterInput = {
   content: string;
@@ -109,12 +99,9 @@ function buildSvg(input: PosterInput): string {
 
 export async function generatePosterImage(input: PosterInput): Promise<string> {
   const svg = buildSvg(input);
-  const filename = `${randomUUID()}.png`;
-  const filepath = path.join(POSTERS_DIR, filename);
+  const png = await sharp(Buffer.from(svg)).png({ quality: 90 }).toBuffer();
 
-  await sharp(Buffer.from(svg)).png({ quality: 90 }).toFile(filepath);
-
-  return `${env.apiPublicUrl}/uploads/posters/${filename}`;
+  return storeImageBuffer(png, "posters", "png");
 }
 
 export type ReviewPhotoPosterInput = PosterInput & {
@@ -123,13 +110,6 @@ export type ReviewPhotoPosterInput = PosterInput & {
   photoUrl: string;
   reviewText: string;
 };
-
-function reviewPhotoUrlToPath(url: string): string | null {
-  const marker = "/uploads/reviews/";
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return path.join(UPLOADS_DIR, url.slice(idx + marker.length));
-}
 
 function buildPhotoOverlaySvg(input: ReviewPhotoPosterInput): string {
   const quote = input.reviewText.trim() || extractHeadline(input.content);
@@ -162,18 +142,20 @@ function buildPhotoOverlaySvg(input: ReviewPhotoPosterInput): string {
 }
 
 export async function generateReviewPhotoPoster(input: ReviewPhotoPosterInput): Promise<string | null> {
-  const photoPath = reviewPhotoUrlToPath(input.photoUrl);
-  if (!photoPath || !fs.existsSync(photoPath)) return null;
+  const photoBuffer = await fetchImageBuffer(input.photoUrl);
+  if (!photoBuffer) return null;
 
-  const filename = `${randomUUID()}.png`;
-  const filepath = path.join(POSTERS_DIR, filename);
   const overlaySvg = buildPhotoOverlaySvg(input);
 
   try {
-    const base = await sharp(photoPath).resize(1080, 1080, { fit: "cover" }).toBuffer();
+    const base = await sharp(photoBuffer).resize(1080, 1080, { fit: "cover" }).toBuffer();
     const overlay = await sharp(Buffer.from(overlaySvg)).png().toBuffer();
-    await sharp(base).composite([{ input: overlay, top: 0, left: 0 }]).png({ quality: 90 }).toFile(filepath);
-    return `${env.apiPublicUrl}/uploads/posters/${filename}`;
+    const composite = await sharp(base)
+      .composite([{ input: overlay, top: 0, left: 0 }])
+      .png({ quality: 90 })
+      .toBuffer();
+
+    return storeImageBuffer(composite, "posters", "png");
   } catch (error) {
     console.warn("Review photo poster failed:", (error as Error).message);
     return null;

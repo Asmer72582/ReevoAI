@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 
-import { env } from "../config/env.js";
-import { reviewImageUpload } from "../lib/upload.js";
+import { storeImageBuffer } from "../lib/media-storage.js";
+import { reviewImageFormat, reviewImageUpload } from "../lib/upload.js";
 import { Review } from "../models/Review.js";
 import { ReviewLink } from "../models/ReviewLink.js";
 import { WorkspaceSettings } from "../models/WorkspaceSettings.js";
@@ -43,57 +43,64 @@ publicReviewRouter.post(
     });
   },
   async (req, res) => {
-    const token = paramId(req.params.token);
-    const link = await ReviewLink.findOne({ token, active: true });
-    if (!link) {
-      res.status(404).json({ error: "Review link not found or inactive" });
-      return;
-    }
-
-    const body = z
-      .object({
-        name: z.string().min(1).max(120),
-        text: z.string().min(10).max(2000),
-        stars: z.coerce.number().int().min(1).max(5),
-      })
-      .safeParse(req.body);
-
-    if (!body.success) {
-      res.status(400).json({ error: body.error.flatten() });
-      return;
-    }
-
-    const files = req.files as Express.Multer.File[] | undefined;
-    const imageUrls = (files ?? []).map(
-      (f) => `${env.apiPublicUrl}/uploads/reviews/${f.filename}`,
-    );
-
-    const text = body.data.text.trim();
-    const sentiment = analyzeReviewSentiment(text, body.data.stars);
-
-    const review = await Review.create({
-      userId: link.userId,
-      name: body.data.name.trim(),
-      text,
-      stars: body.data.stars,
-      source: "Review Link",
-      tag: sentiment,
-      images: imageUrls,
-    });
-
-    const settings = await WorkspaceSettings.findOne({ userId: link.userId });
-    const autoPublisherEnabled = settings?.autoPublisher ?? true;
-
-    let postCreated = false;
-    if (autoPublisherEnabled && sentiment !== "Negative") {
-      try {
-        const { created } = await createPostFromReview(link.userId, review);
-        postCreated = created;
-      } catch (error) {
-        console.warn("Auto-publish from review failed:", (error as Error).message);
+    try {
+      const token = paramId(req.params.token);
+      const link = await ReviewLink.findOne({ token, active: true });
+      if (!link) {
+        res.status(404).json({ error: "Review link not found or inactive" });
+        return;
       }
-    }
 
-    res.status(201).json({ ok: true, review: serializeReview(review), postCreated });
+      const body = z
+        .object({
+          name: z.string().min(1).max(120),
+          text: z.string().min(10).max(2000),
+          stars: z.coerce.number().int().min(1).max(5),
+        })
+        .safeParse(req.body);
+
+      if (!body.success) {
+        res.status(400).json({ error: body.error.flatten() });
+        return;
+      }
+
+      const files = req.files as Express.Multer.File[] | undefined;
+      const imageUrls = await Promise.all(
+        (files ?? []).map((f) => storeImageBuffer(f.buffer, "reviews", reviewImageFormat(f))),
+      );
+
+      const text = body.data.text.trim();
+      const sentiment = analyzeReviewSentiment(text, body.data.stars);
+
+      const review = await Review.create({
+        userId: link.userId,
+        name: body.data.name.trim(),
+        text,
+        stars: body.data.stars,
+        source: "Review Link",
+        tag: sentiment,
+        images: imageUrls,
+      });
+
+      const settings = await WorkspaceSettings.findOne({ userId: link.userId });
+      const autoPublisherEnabled = settings?.autoPublisher ?? true;
+
+      let postCreated = false;
+      if (autoPublisherEnabled && sentiment !== "Negative") {
+        try {
+          const { created } = await createPostFromReview(link.userId, review);
+          postCreated = created;
+        } catch (error) {
+          console.warn("Auto-publish from review failed:", (error as Error).message);
+        }
+      }
+
+      res.status(201).json({ ok: true, review: serializeReview(review), postCreated });
+    } catch (error) {
+      console.error("Public review submit failed:", error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to submit review",
+      });
+    }
   },
 );

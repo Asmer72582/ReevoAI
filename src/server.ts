@@ -39,6 +39,12 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const { pathname } = new URL(request.url);
+    if (pathname.startsWith("/api") || pathname.startsWith("/uploads")) {
+      const { handleApiRequest } = await import("./lib/api-handler");
+      return handleApiRequest(request);
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
