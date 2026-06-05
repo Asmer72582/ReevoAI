@@ -265,18 +265,26 @@ async function encodeMp4WithFfmpeg(frameBuffers: Buffer[], outputPath: string): 
 }
 
 async function encodeMp4(frameBuffers: Buffer[], outputPath: string): Promise<string> {
+  const encodeViaCloudinary = () =>
+    createVideoFromFrameBuffers(frameBuffers, {
+      folder: CLOUDINARY_FOLDERS.reels,
+      secondsPerScene: SECONDS_PER_SCENE,
+      width: W,
+      height: H,
+    });
+
+  // Vercel serverless cannot run ffmpeg binaries — always use Cloudinary there.
+  if (process.env.VERCEL) {
+    return encodeViaCloudinary();
+  }
+
   try {
     await encodeMp4WithFfmpeg(frameBuffers, outputPath);
     const { storeVideoFile } = await import("../lib/media-storage.js");
     return storeVideoFile(outputPath);
   } catch (ffmpegError) {
     console.warn("ffmpeg encoding unavailable, using Cloudinary:", ffmpegError);
-    return createVideoFromFrameBuffers(frameBuffers, {
-      folder: CLOUDINARY_FOLDERS.reels,
-      secondsPerScene: SECONDS_PER_SCENE,
-      width: W,
-      height: H,
-    });
+    return encodeViaCloudinary();
   }
 }
 
