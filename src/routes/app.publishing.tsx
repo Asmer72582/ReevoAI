@@ -30,6 +30,7 @@ export const Route = createFileRoute("/app/publishing")({
   validateSearch: (search: Record<string, unknown>) => ({
     tab: (search.tab as "scheduled" | "published" | "draft" | undefined) ?? undefined,
     highlight: (search.highlight as string | undefined) ?? undefined,
+    channel: (search.channel as string | undefined) ?? undefined,
   }),
   component: Publishing,
 });
@@ -257,6 +258,8 @@ function Publishing() {
     if (search.highlight) setHighlightId(search.highlight);
   }, [search.tab, search.highlight]);
 
+  const channelFilter = search.channel;
+
   const { data, isLoading } = useQuery({
     queryKey: ["posts", tab],
     queryFn: () => api<{ posts: Post[]; weekCounts: number[] }>(`/posts?status=${tab}`),
@@ -326,7 +329,9 @@ function Publishing() {
     reelScript: p.reelScript,
   });
 
-  const list = data?.posts ?? [];
+  const list = (data?.posts ?? []).filter(
+    (post) => !channelFilter || post.channels.includes(channelFilter as keyof typeof ICONS),
+  );
   const counts = data?.weekCounts ?? [0, 0, 0, 0, 0, 0, 0];
   const brandName = settingsData?.settings.brandName ?? "ReevoAI";
   const defaultHashtags = settingsData?.settings.defaultHashtags;
