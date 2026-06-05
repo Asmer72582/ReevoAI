@@ -38,7 +38,9 @@ function ensureConfigured(): void {
   }
 }
 
+/** Safe to call at startup — no-op when credentials are missing. */
 export function initCloudinary(): void {
+  if (!isCloudinaryConfigured()) return;
   ensureConfigured();
 }
 

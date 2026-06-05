@@ -23,10 +23,21 @@ export async function connectDatabase(): Promise<void> {
   mongoose.set("strictQuery", true);
 
   if (!cache.promise) {
-    cache.promise = mongoose.connect(env.mongodbUri, {
-      serverSelectionTimeoutMS: 10_000,
-      connectTimeoutMS: 10_000,
-    });
+    cache.promise = mongoose
+      .connect(env.mongodbUri, {
+        serverSelectionTimeoutMS: 10_000,
+        connectTimeoutMS: 10_000,
+      })
+      .catch((err: unknown) => {
+        cache.promise = null;
+        const hint =
+          process.env.VERCEL && env.mongodbUri.includes("127.0.0.1")
+            ? " Set MONGODB_URI to a MongoDB Atlas connection string in Vercel env vars."
+            : "";
+        throw new Error(
+          `MongoDB connection failed: ${err instanceof Error ? err.message : String(err)}.${hint}`,
+        );
+      });
   }
 
   cache.conn = await cache.promise;
