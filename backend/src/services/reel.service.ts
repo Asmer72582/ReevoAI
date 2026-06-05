@@ -5,9 +5,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 
-import sharp from "sharp";
-
 import { fetchImageBuffer } from "../lib/cloudinary.js";
+import { loadSharp } from "../lib/sharp-loader.js";
 import { storeVideoFile } from "../lib/media-storage.js";
 import type { ReviewDocument } from "../models/Review.js";
 import { generateReelScript } from "./gemini.service.js";
@@ -57,10 +56,12 @@ function wrapLines(text: string, maxChars: number, maxLines: number): string[] {
 }
 
 async function renderSvgFrame(svg: string): Promise<Buffer> {
+  const sharp = await loadSharp();
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
 async function renderPhotoFrame(photoBuffer: Buffer, overlaySvg: string): Promise<Buffer> {
+  const sharp = await loadSharp();
   const base = await sharp(photoBuffer).resize(W, H, { fit: "cover" }).toBuffer();
   const overlay = await sharp(Buffer.from(overlaySvg)).png().toBuffer();
   return sharp(base).composite([{ input: overlay, top: 0, left: 0 }]).png().toBuffer();

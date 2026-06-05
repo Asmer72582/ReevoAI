@@ -6,6 +6,9 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
+  ssr: {
+    external: ["sharp", /^@img\/sharp/, "ffmpeg-static"],
+  },
   server: {
     port: 8080,
     proxy: {
@@ -28,8 +31,13 @@ export default defineConfig({
         entryFormat: "node",
       },
       nodeModulesDirs: [".", "./backend"],
-      externals: {
-        external: ["ffmpeg-static"],
+      traceDeps: [
+        "sharp*",
+        "@img/sharp*",
+        "ffmpeg-static",
+      ],
+      rollupConfig: {
+        external: ["sharp", /^@img\/sharp/, "ffmpeg-static"],
       },
     }),
   ],

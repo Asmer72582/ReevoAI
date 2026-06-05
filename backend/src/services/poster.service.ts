@@ -1,8 +1,5 @@
-import { randomUUID } from "node:crypto";
-
-import sharp from "sharp";
-
 import { fetchImageBuffer } from "../lib/cloudinary.js";
+import { loadSharp } from "../lib/sharp-loader.js";
 import { storeImageBuffer } from "../lib/media-storage.js";
 
 export type PosterInput = {
@@ -98,6 +95,7 @@ function buildSvg(input: PosterInput): string {
 }
 
 export async function generatePosterImage(input: PosterInput): Promise<string> {
+  const sharp = await loadSharp();
   const svg = buildSvg(input);
   const png = await sharp(Buffer.from(svg)).png({ quality: 90 }).toBuffer();
 
@@ -148,6 +146,7 @@ export async function generateReviewPhotoPoster(input: ReviewPhotoPosterInput): 
   const overlaySvg = buildPhotoOverlaySvg(input);
 
   try {
+    const sharp = await loadSharp();
     const base = await sharp(photoBuffer).resize(1080, 1080, { fit: "cover" }).toBuffer();
     const overlay = await sharp(Buffer.from(overlaySvg)).png().toBuffer();
     const composite = await sharp(base)
