@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev:api": "npm run dev --prefix backend",
+    "dev:all": "concurrently -k -n api,web -c blue,green \"npm run dev:api\" \"npm run dev\"",
+    "kill:api": "lsof -ti :3001 | xargs kill -9 2>/dev/null || true",
+    "postinstall": "npm install --prefix backend",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
@@ -68,11 +72,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "^2.1.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.2.1",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",

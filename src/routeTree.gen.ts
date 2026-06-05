@@ -9,21 +9,34 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppReviewsRouteImport } from './routes/app.reviews'
 import { Route as AppPublishingRouteImport } from './routes/app.publishing'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppAiContentRouteImport } from './routes/app.ai-content'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -50,6 +63,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
@@ -82,24 +100,30 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/app/ai-content': typeof AppAiContentRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/publishing': typeof AppPublishingRoute
   '/app/reviews': typeof AppReviewsRoute
   '/app/settings': typeof AppSettingsRoute
+  '/r/$token': typeof RTokenRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/app/ai-content': typeof AppAiContentRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/publishing': typeof AppPublishingRoute
   '/app/reviews': typeof AppReviewsRoute
   '/app/settings': typeof AppSettingsRoute
+  '/r/$token': typeof RTokenRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -108,12 +132,15 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/app/ai-content': typeof AppAiContentRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/publishing': typeof AppPublishingRoute
   '/app/reviews': typeof AppReviewsRoute
   '/app/settings': typeof AppSettingsRoute
+  '/r/$token': typeof RTokenRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -123,24 +150,30 @@ export interface FileRouteTypes {
     | '/app'
     | '/contact'
     | '/faq'
+    | '/login'
     | '/pricing'
+    | '/signup'
     | '/app/ai-content'
     | '/app/analytics'
     | '/app/publishing'
     | '/app/reviews'
     | '/app/settings'
+    | '/r/$token'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/contact'
     | '/faq'
+    | '/login'
     | '/pricing'
+    | '/signup'
     | '/app/ai-content'
     | '/app/analytics'
     | '/app/publishing'
     | '/app/reviews'
     | '/app/settings'
+    | '/r/$token'
     | '/app'
   id:
     | '__root__'
@@ -148,12 +181,15 @@ export interface FileRouteTypes {
     | '/app'
     | '/contact'
     | '/faq'
+    | '/login'
     | '/pricing'
+    | '/signup'
     | '/app/ai-content'
     | '/app/analytics'
     | '/app/publishing'
     | '/app/reviews'
     | '/app/settings'
+    | '/r/$token'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -162,16 +198,33 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
+  LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
+  SignupRoute: typeof SignupRoute
+  RTokenRoute: typeof RTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -208,6 +261,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/settings': {
       id: '/app/settings'
@@ -272,8 +332,21 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
+  LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
+  SignupRoute: SignupRoute,
+  RTokenRoute: RTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

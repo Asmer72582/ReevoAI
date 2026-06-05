@@ -1,0 +1,212 @@
+{
+  "users": [
+    {
+      "id": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "email": "demo@reevoai.com",
+      "name": "Alex Smith",
+      "passwordHash": "$2b$10$K22D9NpI7yun64fKtR8vf.vhndvgUQJimcuHjA5QUHb9O0R00y95O",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "77ffb3c7-1dfc-4e94-95f4-2942d2a94cec",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Maya Rodriguez",
+      "source": "Google",
+      "stars": 5,
+      "text": "Best onboarding I've ever experienced. The team replies in minutes and the product just works.",
+      "tag": "Onboarding",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "f62d2823-2c3b-4dba-96e5-67b2e2e851c7",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Daniel Kim",
+      "source": "Trustpilot",
+      "stars": 5,
+      "text": "Generated 8 reels from a single batch of reviews — wild. Our engagement doubled in two weeks.",
+      "tag": "Content",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "82cf1d84-0e9b-462a-8d31-d22924245b13",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Priya Shah",
+      "source": "G2",
+      "stars": 4,
+      "text": "Captions sound like our brand voice. Saved me 6 hours this week and our reach is climbing.",
+      "tag": "AI",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "b118ec9a-a580-4e59-bdff-9f89a99f8685",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Leo Martins",
+      "source": "Capterra",
+      "stars": 5,
+      "text": "Auto-publishing across Instagram and LinkedIn just works. No more copy-paste hell.",
+      "tag": "Publishing",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "d497c577-4f4b-48a6-bd4e-54c2e29347c5",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Ava Chen",
+      "source": "Google",
+      "stars": 4,
+      "text": "Love how reviews are turned into testimonial videos automatically. The voiceovers are great.",
+      "tag": "Video",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "ae9cc898-dd19-472b-a3d8-704a097c0d89",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Noah Patel",
+      "source": "Yelp",
+      "stars": 3,
+      "text": "Decent overall, would love more granular control over hashtags per channel.",
+      "tag": "Feature request",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "3da77d12-9b8f-4820-b084-ea6230faa42b",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Sofia Reyes",
+      "source": "Trustpilot",
+      "stars": 5,
+      "text": "Customers don't realize the posts are AI — feels totally human. That's the magic.",
+      "tag": "AI",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "525db734-0293-40cc-8481-ba5eb34bb5e3",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "name": "Marcus Lee",
+      "source": "G2",
+      "stars": 5,
+      "text": "Switched from three tools to just ReevoAI. ROI was visible in under a month.",
+      "tag": "ROI",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    }
+  ],
+  "posts": [
+    {
+      "id": "63b28bc6-2436-42c5-a1a6-33e626719dda",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Testimonial reel — Maya R.",
+      "content": "✨ Real talk from Maya R.: Best onboarding ever.",
+      "channels": [
+        "Instagram",
+        "X"
+      ],
+      "status": "scheduled",
+      "scheduledAt": "2026-06-04T19:15:19.339Z",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "63c209ec-e641-4b34-a51c-df1c2d588e9d",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Carousel: 5 wins from G2",
+      "content": "Five customer wins from G2 this week.",
+      "channels": [
+        "LinkedIn"
+      ],
+      "status": "scheduled",
+      "scheduledAt": "2026-06-04T23:15:19.339Z",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "105f3764-0989-4d78-bd61-ae0e6404b0ac",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Quote graphic — Daniel K.",
+      "content": "Daniel K. shipped 8 reels from one batch of reviews.",
+      "channels": [
+        "X",
+        "Facebook"
+      ],
+      "status": "scheduled",
+      "scheduledAt": "2026-06-05T17:15:19.339Z",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "7ee91d4c-13f5-44f7-b8ba-46d49eb7f25b",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Customer story video",
+      "content": "Full customer story highlight reel.",
+      "channels": [
+        "YouTube"
+      ],
+      "status": "scheduled",
+      "scheduledAt": "2026-06-05T23:15:19.339Z",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "524b4e4e-2445-442e-9d5a-184b7db0a4ac",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Onboarding tips reel",
+      "content": "Quick tips from our happiest customers.",
+      "channels": [
+        "Instagram"
+      ],
+      "status": "published",
+      "scheduledAt": "2026-06-03T17:15:19.339Z",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "2c59f6d1-4e45-47e0-b047-0927c6e990f6",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Feature launch teaser",
+      "content": "Something new is coming — stay tuned.",
+      "channels": [
+        "LinkedIn",
+        "X"
+      ],
+      "status": "published",
+      "scheduledAt": "2026-06-03T05:15:19.339Z",
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    },
+    {
+      "id": "602ead1a-bf4f-49cb-bbd5-261476ad3b95",
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "title": "Behind the scenes draft",
+      "content": "Draft BTS post for the team.",
+      "channels": [
+        "Instagram"
+      ],
+      "status": "draft",
+      "scheduledAt": null,
+      "createdAt": "2026-06-04T17:15:19.336Z"
+    }
+  ],
+  "settings": [
+    {
+      "userId": "e05f216d-6697-48a2-aece-8a4e2b5cc205",
+      "brandName": "ReevoAI",
+      "brandVoice": "Confident, friendly, slightly witty. Short sentences. Customer-first.",
+      "defaultHashtags": "#SaaS #CustomerLove #ReevoAI",
+      "channels": [
+        {
+          "name": "Instagram",
+          "connected": true
+        },
+        {
+          "name": "Facebook",
+          "connected": true
+        },
+        {
+          "name": "LinkedIn",
+          "connected": true
+        },
+        {
+          "name": "YouTube",
+          "connected": false
+        },
+        {
+          "name": "X",
+          "connected": true
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -13,6 +14,7 @@ const nav = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
   return (
     <header className="sticky top-0 z-50 w-full">
       <div className="mx-auto mt-4 max-w-6xl px-4">
@@ -37,8 +39,20 @@ export function Header() {
             ))}
           </nav>
           <div className="hidden items-center gap-2 md:flex">
-            <Button variant="ghost" size="sm">Sign in</Button>
-            <Button size="sm" className="rounded-xl bg-[image:var(--gradient-primary)] shadow-[var(--shadow-elegant)]">Start free</Button>
+            {user ? (
+              <Button asChild size="sm" className="rounded-xl bg-[image:var(--gradient-primary)] shadow-[var(--shadow-elegant)]">
+                <Link to="/app">Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/login">Sign in</Link>
+                </Button>
+                <Button asChild size="sm" className="rounded-xl bg-[image:var(--gradient-primary)] shadow-[var(--shadow-elegant)]">
+                  <Link to="/signup">Start free</Link>
+                </Button>
+              </>
+            )}
           </div>
           <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -49,7 +63,11 @@ export function Header() {
             {nav.map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-secondary">{n.label}</Link>
             ))}
-            <Button size="sm" className="mt-2 rounded-xl bg-[image:var(--gradient-primary)]">Start free</Button>
+            <Button asChild size="sm" className="mt-2 rounded-xl bg-[image:var(--gradient-primary)]">
+              <Link to={user ? "/app" : "/signup"} onClick={() => setOpen(false)}>
+                {user ? "Dashboard" : "Start free"}
+              </Link>
+            </Button>
           </div>
         )}
       </div>

@@ -1,8 +1,10 @@
-import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/AppSidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getStoredToken } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/app")({
   head: () => ({
@@ -11,10 +13,23 @@ export const Route = createFileRoute("/app")({
       { name: "description", content: "Manage reviews, AI content, publishing and analytics." },
     ],
   }),
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && !getStoredToken()) {
+      throw redirect({ to: "/login", search: { redirect: window.location.pathname } });
+    }
+  },
   component: AppLayout,
 });
 
 function AppLayout() {
+  const { user, logout, loading } = useAuth();
+  const initials = user?.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() ?? "?";
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-[image:var(--gradient-hero)]">
@@ -38,8 +53,20 @@ function AppLayout() {
               <Link to="/" className="hidden text-xs font-medium text-muted-foreground hover:text-foreground md:inline">
                 Back to site
               </Link>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-xs font-semibold text-primary-foreground">
-                AS
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-xl"
+                title="Sign out"
+                onClick={() => void logout().then(() => (window.location.href = "/login"))}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-xs font-semibold text-primary-foreground"
+                title={user?.name ?? (loading ? "Loading…" : "User")}
+              >
+                {initials}
               </div>
             </div>
           </header>
