@@ -17,11 +17,12 @@ const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 pkg.dependencies = {
   ...pkg.dependencies,
   sharp: "^0.34.5",
+  cloudinary: "^2.10.0",
 };
 
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
 
-console.log(`Installing sharp into Vercel function (${process.platform}-${process.arch})...`);
+console.log(`Installing native deps into Vercel function (${process.platform}-${process.arch})...`);
 
 execSync("npm install --no-package-lock --omit=dev --include=optional", {
   cwd: funcRoot,
@@ -29,7 +30,7 @@ execSync("npm install --no-package-lock --omit=dev --include=optional", {
 });
 
 const modulesDir = path.join(funcRoot, "node_modules");
-const required = ["sharp", "detect-libc", "semver"];
+const required = ["sharp", "detect-libc", "semver", "cloudinary"];
 const missing = required.filter((dep) => !fs.existsSync(path.join(modulesDir, dep)));
 
 if (missing.length > 0) {
@@ -42,4 +43,4 @@ const nativeSharp = fs.existsSync(imgDir)
   ? fs.readdirSync(imgDir).filter((name) => name.startsWith("sharp-"))
   : [];
 
-console.log(`Sharp deps OK — native bindings: ${nativeSharp.join(", ") || "none (check platform)"}`);
+console.log(`Native deps OK — sharp: ${nativeSharp.join(", ") || "none"}, cloudinary: installed`);
