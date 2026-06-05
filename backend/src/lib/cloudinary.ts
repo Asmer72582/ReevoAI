@@ -16,6 +16,8 @@ export const CLOUDINARY_FOLDERS = {
   reels: "reevoai/reels",
 } as const;
 
+const EMPTY_REEL_BASE_VIDEO_ID = `${CLOUDINARY_FOLDERS.reels}/empty-base`;
+
 export function isCloudinaryConfigured(): boolean {
   return Boolean(env.cloudinaryCloudName && env.cloudinaryApiKey && env.cloudinaryApiSecret);
 }
@@ -120,7 +122,37 @@ export async function fetchImageBuffer(url: string): Promise<Buffer | null> {
 }
 
 function toOverlayId(publicId: string): string {
-  return `image:${publicId.replace(/\//g, ":")}`;
+  return publicId.replace(/\//g, ":");
+}
+
+let emptyReelBaseVersion: number | null = null;
+
+/** Cloudinary slideshows need a real video base; image-only URLs 404 on this account. */
+async function ensureEmptyReelBaseVideo(): Promise<number> {
+  if (emptyReelBaseVersion) return emptyReelBaseVersion;
+
+  ensureConfigured();
+
+  try {
+    const existing = await cloudinary.api.resource(EMPTY_REEL_BASE_VIDEO_ID, { resource_type: "video" });
+    emptyReelBaseVersion = existing.version;
+    return existing.version;
+  } catch {
+    const response = await fetch("https://res.cloudinary.com/demo/video/upload/docs/empty.mp4");
+    if (!response.ok) {
+      throw new Error("Failed to fetch Cloudinary blank base video for reel encoding");
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const uploaded = await cloudinary.uploader.upload(`data:video/mp4;base64,${buffer.toString("base64")}`, {
+      resource_type: "video",
+      public_id: EMPTY_REEL_BASE_VIDEO_ID,
+      overwrite: true,
+    });
+
+    emptyReelBaseVersion = uploaded.version;
+    return uploaded.version;
+  }
 }
 
 /** Build an MP4 slideshow from PNG frames using Cloudinary (works on Vercel without ffmpeg). */
@@ -136,6 +168,7 @@ export async function createVideoFromFrameBuffers(
   ensureConfigured();
   if (frameBuffers.length === 0) throw new Error("No frames to encode");
 
+  const baseVersion = await ensureEmptyReelBaseVideo();
   const batchId = randomUUID();
   const publicIds: string[] = [];
 
@@ -154,25 +187,24 @@ export async function createVideoFromFrameBuffers(
   }
 
   const duration = String(options.secondsPerScene);
-  const transformation: Record<string, string | number>[] = [
-    {
-      duration,
-      width: options.width,
-      height: options.height,
-      crop: "fill",
-    },
-  ];
+  const frameSize = {
+    width: options.width,
+    height: options.height,
+    crop: "fill" as const,
+  };
 
-  for (let i = 1; i < publicIds.length; i++) {
+  const transformation: Record<string, string | number>[] = [{ ...frameSize }];
+
+  for (const publicId of publicIds) {
     transformation.push(
-      { flags: "splice", overlay: toOverlayId(publicIds[i]), duration },
+      { ...frameSize, overlay: toOverlayId(publicId), flags: "splice", duration },
       { flags: "layer_apply" },
     );
   }
 
-  const derivedUrl = cloudinary.url(publicIds[0], {
+  const derivedUrl = cloudinary.url(EMPTY_REEL_BASE_VIDEO_ID, {
     resource_type: "video",
-    format: "mp4",
+    version: baseVersion,
     transformation,
     secure: true,
   });
