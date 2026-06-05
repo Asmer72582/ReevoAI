@@ -1,62 +1,45 @@
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const srcModules = path.join(root, "node_modules");
-const destModules = path.join(root, ".vercel/output/functions/__server.func/node_modules");
+const funcRoot = path.join(root, ".vercel/output/functions/__server.func");
 
-function copyDir(src, dest) {
-  if (!fs.existsSync(src)) return false;
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.cpSync(src, dest, { recursive: true });
-  return true;
-}
-
-function copyPackage(name) {
-  const src = path.join(srcModules, name);
-  const dest = path.join(destModules, name);
-  if (copyDir(src, dest)) {
-    console.log(`Copied ${name} → Vercel function`);
-    return true;
-  }
-  return false;
-}
-
-if (!fs.existsSync(destModules)) {
-  console.log("No Vercel function output — skipping native dep copy");
+if (!fs.existsSync(funcRoot)) {
+  console.log("No Vercel function output — skipping native dep install");
   process.exit(0);
 }
 
-let copied = 0;
+const pkgPath = path.join(funcRoot, "package.json");
+const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 
-if (copyPackage("sharp")) copied++;
+// Install sharp with its full dependency tree + correct platform binaries (linux-x64 on Vercel).
+pkg.dependencies = {
+  ...pkg.dependencies,
+  sharp: "^0.34.5",
+};
 
-const imgDir = path.join(srcModules, "@img");
-const imgDest = path.join(destModules, "@img");
-if (fs.existsSync(imgDir)) {
-  fs.mkdirSync(imgDest, { recursive: true });
-  for (const entry of fs.readdirSync(imgDir)) {
-    if (entry.startsWith("sharp")) {
-      if (copyDir(path.join(imgDir, entry), path.join(imgDest, entry))) copied++;
-    }
-  }
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+
+console.log(`Installing sharp into Vercel function (${process.platform}-${process.arch})...`);
+
+execSync("npm install --no-package-lock --omit=dev --include=optional", {
+  cwd: funcRoot,
+  stdio: "inherit",
+});
+
+const modulesDir = path.join(funcRoot, "node_modules");
+const required = ["sharp", "detect-libc", "semver"];
+const missing = required.filter((dep) => !fs.existsSync(path.join(modulesDir, dep)));
+
+if (missing.length > 0) {
+  console.error(`Missing after install: ${missing.join(", ")}`);
+  process.exit(1);
 }
 
-// Backend install may hold sharp when hoisted differently
-const backendImg = path.join(root, "backend/node_modules/@img");
-if (fs.existsSync(backendImg)) {
-  fs.mkdirSync(imgDest, { recursive: true });
-  for (const entry of fs.readdirSync(backendImg)) {
-    if (entry.startsWith("sharp")) {
-      const dest = path.join(imgDest, entry);
-      if (!fs.existsSync(dest) && copyDir(path.join(backendImg, entry), dest)) copied++;
-    }
-  }
-}
+const imgDir = path.join(modulesDir, "@img");
+const nativeSharp = fs.existsSync(imgDir)
+  ? fs.readdirSync(imgDir).filter((name) => name.startsWith("sharp-"))
+  : [];
 
-const backendSharp = path.join(root, "backend/node_modules/sharp");
-if (!fs.existsSync(path.join(destModules, "sharp")) && copyDir(backendSharp, path.join(destModules, "sharp"))) {
-  copied++;
-}
-
-console.log(`Native deps copied: ${copied} package(s)`);
+console.log(`Sharp deps OK — native bindings: ${nativeSharp.join(", ") || "none (check platform)"}`);

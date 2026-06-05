@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --include=dev --include=optional",
-  "buildCommand": "npm run build && node scripts/copy-native-deps.mjs"
+  "buildCommand": "npm run build"
 }
