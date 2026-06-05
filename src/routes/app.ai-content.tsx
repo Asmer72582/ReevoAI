@@ -7,7 +7,7 @@ import { InstagramPosterPreview } from "@/components/app/InstagramPosterPreview"
 import { InstagramReelPreview } from "@/components/app/InstagramReelPreview";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { api } from "@/lib/api-client";
+import { api, ApiError, REEL_REQUEST_TIMEOUT_MS } from "@/lib/api-client";
 
 export const Route = createFileRoute("/app/ai-content")({
   head: () => ({ meta: [{ title: "AI Content — ReevoAI" }] }),
@@ -92,14 +92,14 @@ function AIContent() {
     try {
       const res = await api<{ videoUrl: string; script: string; aiSource: string }>(
         `/reviews/${latestReview.id}/generate-reel`,
-        { method: "POST" },
+        { method: "POST", timeoutMs: REEL_REQUEST_TIMEOUT_MS },
       );
       setReelVideoUrl(res.videoUrl);
       setReelScript(res.script);
       toast.success("Reel video ready — open Reel Preview");
       void queryClient.invalidateQueries({ queryKey: ["reviews"] });
-    } catch {
-      toast.error("Reel generation failed");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Reel generation failed");
     } finally {
       setReelLoading(false);
     }

@@ -5,7 +5,7 @@ import { Star, Filter, Sparkles, MessageSquare, Link2, Copy, RefreshCw, External
 import { PageHeader } from "@/components/app/PageHeader";
 import { InstagramReelPreview } from "@/components/app/InstagramReelPreview";
 import { Button } from "@/components/ui/button";
-import { api, reviewLinkApi } from "@/lib/api-client";
+import { api, REEL_REQUEST_TIMEOUT_MS, reviewLinkApi } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/reviews")({
@@ -81,6 +81,7 @@ function Reviews() {
     mutationFn: (review: Review) =>
       api<{ videoUrl: string; script: string; aiSource: string }>(`/reviews/${review.id}/generate-reel`, {
         method: "POST",
+        timeoutMs: REEL_REQUEST_TIMEOUT_MS,
       }),
     onSuccess: (res, review) => {
       toast.success(res.aiSource === "gemini" ? "Reel video generated" : "Reel video created", {

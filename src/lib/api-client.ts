@@ -1,6 +1,9 @@
 const TOKEN_KEY = "reevo_token";
 const REQUEST_TIMEOUT_MS = 12_000;
 
+/** Reel generation uploads frames + encodes video on Cloudinary (~15–30s on Vercel). */
+export const REEL_REQUEST_TIMEOUT_MS = 120_000;
+
 /** In dev, call the API directly so login works even if Vite proxy is misconfigured. */
 export const API_BASE =
   import.meta.env.VITE_API_URL ??
@@ -48,9 +51,9 @@ async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Pro
 
 export async function api<T>(
   path: string,
-  options: RequestInit & { json?: unknown } = {},
+  options: RequestInit & { json?: unknown; timeoutMs?: number } = {},
 ): Promise<T> {
-  const { json, headers, ...rest } = options;
+  const { json, headers, timeoutMs = REQUEST_TIMEOUT_MS, ...rest } = options;
   const token = getStoredToken();
 
   let res: Response;
@@ -67,13 +70,16 @@ export async function api<T>(
         },
         body: json !== undefined ? JSON.stringify(json) : rest.body,
       },
-      REQUEST_TIMEOUT_MS,
+      timeoutMs,
     );
   } catch (error) {
     const aborted = error instanceof DOMException && error.name === "AbortError";
+    const timeoutSec = Math.round(timeoutMs / 1000);
     throw new ApiError(
       aborted
-        ? `API timed out (${API_BASE}). Kill stuck servers: lsof -i :3001 then npm run dev:api`
+        ? import.meta.env.DEV
+          ? `API timed out after ${timeoutSec}s (${API_BASE}). Kill stuck servers: lsof -i :3001 then npm run dev:api`
+          : `Request timed out after ${timeoutSec}s — try again`
         : `Cannot reach API at ${API_BASE} — run npm run dev:api in another terminal`,
       0,
     );
