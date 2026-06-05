@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 
 import { fetchImageBuffer } from "../lib/cloudinary.js";
 import { loadSharp } from "../lib/sharp-loader.js";
-import { storeVideoFile } from "../lib/media-storage.js";
+import { CLOUDINARY_FOLDERS, createVideoFromFrameBuffers } from "../lib/cloudinary.js";
 import type { ReviewDocument } from "../models/Review.js";
 import { generateReelScript } from "./gemini.service.js";
 
@@ -225,10 +225,10 @@ async function getFfmpegPath(): Promise<string | null> {
   }
 }
 
-async function encodeMp4(frameBuffers: Buffer[], outputPath: string): Promise<void> {
+async function encodeMp4WithFfmpeg(frameBuffers: Buffer[], outputPath: string): Promise<void> {
   const ffmpeg = await getFfmpegPath();
   if (!ffmpeg) {
-    throw new Error("Reel video encoding is not available on this host (ffmpeg missing)");
+    throw new Error("ffmpeg missing");
   }
 
   const tempDir = path.join(os.tmpdir(), `reevoai-reel-${randomUUID()}`);
@@ -264,6 +264,22 @@ async function encodeMp4(frameBuffers: Buffer[], outputPath: string): Promise<vo
   }
 }
 
+async function encodeMp4(frameBuffers: Buffer[], outputPath: string): Promise<string> {
+  try {
+    await encodeMp4WithFfmpeg(frameBuffers, outputPath);
+    const { storeVideoFile } = await import("../lib/media-storage.js");
+    return storeVideoFile(outputPath);
+  } catch (ffmpegError) {
+    console.warn("ffmpeg encoding unavailable, using Cloudinary:", ffmpegError);
+    return createVideoFromFrameBuffers(frameBuffers, {
+      folder: CLOUDINARY_FOLDERS.reels,
+      secondsPerScene: SECONDS_PER_SCENE,
+      width: W,
+      height: H,
+    });
+  }
+}
+
 export async function generateReviewReel(
   review: ReviewDocument,
   ctx: ReelContext,
@@ -281,8 +297,7 @@ export async function generateReviewReel(
 
   const tempVideo = path.join(os.tmpdir(), `reevoai-reel-${randomUUID()}.mp4`);
   try {
-    await encodeMp4(frames, tempVideo);
-    const videoUrl = await storeVideoFile(tempVideo);
+    const videoUrl = await encodeMp4(frames, tempVideo);
 
     return {
       videoUrl,

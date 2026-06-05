@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 import { v2 as cloudinary } from "cloudinary";
@@ -116,4 +117,73 @@ export async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   }
 
   return null;
+}
+
+function toOverlayId(publicId: string): string {
+  return `image:${publicId.replace(/\//g, ":")}`;
+}
+
+/** Build an MP4 slideshow from PNG frames using Cloudinary (works on Vercel without ffmpeg). */
+export async function createVideoFromFrameBuffers(
+  frameBuffers: Buffer[],
+  options: {
+    folder: string;
+    secondsPerScene: number;
+    width: number;
+    height: number;
+  },
+): Promise<string> {
+  ensureConfigured();
+  if (frameBuffers.length === 0) throw new Error("No frames to encode");
+
+  const batchId = randomUUID();
+  const publicIds: string[] = [];
+
+  for (let i = 0; i < frameBuffers.length; i++) {
+    const publicId = `${options.folder}/frames/${batchId}/f${String(i + 1).padStart(2, "0")}`;
+    const result = await cloudinary.uploader.upload(
+      `data:image/png;base64,${frameBuffers[i].toString("base64")}`,
+      {
+        public_id: publicId,
+        resource_type: "image",
+        overwrite: true,
+      },
+    );
+    if (!result.public_id) throw new Error("Cloudinary frame upload failed");
+    publicIds.push(result.public_id);
+  }
+
+  const duration = String(options.secondsPerScene);
+  const transformation: Record<string, string | number>[] = [
+    {
+      duration,
+      width: options.width,
+      height: options.height,
+      crop: "fill",
+    },
+  ];
+
+  for (let i = 1; i < publicIds.length; i++) {
+    transformation.push(
+      { flags: "splice", overlay: toOverlayId(publicIds[i]), duration },
+      { flags: "layer_apply" },
+    );
+  }
+
+  const derivedUrl = cloudinary.url(publicIds[0], {
+    resource_type: "video",
+    format: "mp4",
+    transformation,
+    secure: true,
+  });
+
+  const video = await cloudinary.uploader.upload(derivedUrl, {
+    resource_type: "video",
+    folder: options.folder,
+    format: "mp4",
+    overwrite: true,
+  });
+
+  if (!video.secure_url) throw new Error("Cloudinary reel video upload failed");
+  return video.secure_url;
 }

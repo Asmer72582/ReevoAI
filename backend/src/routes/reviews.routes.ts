@@ -99,7 +99,8 @@ reviewsRouter.post("/reviews/:id/generate-reel", requireAuth, async (req: Authed
     });
   } catch (error) {
     console.error("Reel generation failed:", error);
-    res.status(500).json({ error: "Failed to generate reel video" });
+    const message = error instanceof Error ? error.message : "Failed to generate reel video";
+    res.status(500).json({ error: message });
   }
 });
 
