@@ -173,7 +173,7 @@ Add these in the Vercel project **Settings → Environment Variables** (Producti
 | `JWT_SECRET` | Long random string for auth tokens |
 | `CLIENT_ORIGIN` | Your Vercel URL, e.g. `https://reevoai.vercel.app` |
 | `PUBLIC_APP_URL` | Same as `CLIENT_ORIGIN` (used for review links) |
-| `NODE_ENV` | `production` |
+| `NODE_ENV` | `production` (optional — Vercel sets this automatically) |
 
 `VERCEL_URL` is set automatically. The API is served at `/api` on the same domain — no separate `VITE_API_URL` needed.
 
